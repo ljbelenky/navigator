@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 class Node():
@@ -62,3 +63,14 @@ class Map():
         data = [len(node.connections) for node in self.nodes]
         plt.hist(data)
         plt.show()
+
+    def relax(self):
+        '''for each node, find vector to all connected points, apply connected force
+        find vector to all unconnected points, apply unconnected force'''
+
+        for node in self.nodes:
+            # connected_nodes = pd.DataFrame()
+
+            # unconnected_nodes = pd.DataFrame()
+            node.x += delta_connected_x + delta_unconnected_x
+            node.y += delta_connected_y + delta_unconnected_y
