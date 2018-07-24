@@ -38,11 +38,12 @@ class Map():
         self.connections = {}
         for _ in range(n_connections):
             key = tuple(np.random.choice(self.nodes, size = 2, replace = False))
-            duration = np.random.random()*key[0].distance(key[1])
-            status = 'untraversed'
-            self.connections[key] = {'duration':duration, 'status': status}
+            if key[::-1] not in self.connections.keys():
+                duration = np.random.random()*key[0].distance(key[1])
+                status = 'untraversed'
+                self.connections[key] = {'duration':duration, 'status': status}
 
-    def remove_unconnected_nodes(self):
+    def _remove_unconnected_nodes(self):
         # remove any unconnected nodes
         connected_nodes = set()
         for n1, n2 in self.connections:
@@ -61,12 +62,19 @@ class Map():
         return "map with {} nodes and {} connections".format(len(self.nodes), len(self.connections))
 
     def plot(self):
+        x = []
+        y = []
+        start_stop_x =[]
+        start_stop_y = []
         for node in self.nodes:
             if node == self.start or node == self.stop:
-                c = 'red'
+                start_stop_x.append(node.x)
+                start_stop_y.append(node.y)
             else:
-                c = 'gray'
-            plt.scatter(node.x, node.y, marker = 'o', c=c)
+                x.append(node.x)
+                y.append(node.y)
+        plt.scatter(x,y, marker = 'o', c = 'gray', alpha = .3)
+        plt.scatter(start_stop_x, start_stop_y, marker = 'o', c = 'red')
         for n1, n2 in self.connections:
             plt.plot([n1.x, n2.x],[n1.y, n2.y], c= 'gray', alpha = .2)
         plt.show()
@@ -76,10 +84,22 @@ class Map():
         plt.hist(data)
         plt.show()
 
-    def remove_dead_ends(self):
-        relaxing_rate = .01
 
+    def trim(self, verbose = False):
+        '''iteratively remove isolated and dead-end nodes until stable configuration remains'''
+        nodes = len(self.nodes)
+        while True:
+            self._remove_unconnected_nodes()
+            self._remove_dead_ends()
+            if nodes == len(self.nodes):
+                break
+            else:
+                nodes = len(self.nodes)
+                if verbose:
+                    print(self)
+                    self.plot()
 
+    def _remove_dead_ends(self):
     # remove any nodes with 1 connection that are not start or stop
         from collections import Counter
         #make repetitive list of all nodes in connections
@@ -92,7 +112,6 @@ class Map():
         for node, count in counter.items():
             if node.status not in ['start','stop'] and count == 1:
                 dead_ends.append(node)
-        print(dead_ends)
         self.nodes = list(set(self.nodes) - set(dead_ends))
         # delete all connections that don't have both ends in nodes
         culled_connections = {}
