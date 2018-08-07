@@ -1,12 +1,10 @@
 from map import map
 
 
-m = map.Map(100, 200)
-m.pick_start_and_stop()
-# for node in m.nodes:
-#     print(node.connections)
+m = map.Map(500, 1500)
 print(m)
-m.plot()
 
-m.trim(verbose = True)
-m.plot()
+for j in [0,499]:
+    for i, k in m.connections.items():
+        if j in i:
+            print(i,k)
