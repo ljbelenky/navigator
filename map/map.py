@@ -2,142 +2,85 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-class Node():
-    def __init__(self):
-        self.x = np.random.random()
-        self.y = np.random.random()
-        self.status = 'unvisited'
-        # self.connections = {}
-    def __repr__(self):
-        return " ".join(['Node:', str(self.x), str(self.y)])
+class Node:
+    '''A Node is a point on a graph that has X,Y coordinates and is connected to zero or more edges. It also records the lowest odomter of cars that visit it.'''
 
-    def add_connection(self, other, factor):
-        vector_x = self.x - other.x
-        vector_y = self.y - other.y
-        distance = (vector_x**2+vector_y**2)**.5
-        self.connections[other] = distance * factor
+    def __init__(self, x, y, street_map):
+        #i and j are logical positions, x and y are physical position
+        self.x = self.i = x
+        self.y = self.j = y
+        self.earliest_arrival = None
+        self.map = street_map
 
-    def distance(self,other):
-        a = np.array([self.x, self.y])
-        b = np.array([other.x, other.y])
-        return np.linalg.norm(a-b)
+    @property
+    def edges(self):
+        '''The collection of all edges that connect to this node'''
+        return [edge for edge in self.map.edges if self in edge.nodes]
 
-
-class Map():
-    def __init__(self, n_nodes, n_connections):
-        # Make nodes
-        self.nodes = [Node() for _ in range(n_nodes)]
-        self.make_connections(n_connections)
-
-    def make_connections(self, n_connections):
-        '''Connections are a dictionary with
-        key = tuple of two nodes
-        value = dictionary of duration and status
-        status = 'untraversed', 'traversed', 'on-route'
-        '''
-        self.connections = {}
-        for _ in range(n_connections):
-            key = tuple(np.random.choice(self.nodes, size = 2, replace = False))
-            if key[::-1] not in self.connections.keys():
-                duration = np.random.random()*key[0].distance(key[1])
-                status = 'untraversed'
-                self.connections[key] = {'duration':duration, 'status': status}
-
-    def _remove_unconnected_nodes(self):
-        # remove any unconnected nodes
-        connected_nodes = set()
-        for n1, n2 in self.connections:
-            connected_nodes |= set([n1, n2])
-
-        self.nodes = [node for node in self.nodes if node in connected_nodes]
-
-    def pick_start_and_stop(self):
-        # pick start and stop node
-        self.start = self.nodes[0]
-        self.start.status = 'start'
-        self.stop = self.nodes[-1]
-        self.stop.status = 'stop'
+    @property
+    def neighbors(self):
+        '''The nodes that are connected to the edges connected to this node'''
+        return set([edge.nodes for edge in self.edges]) - {self}
 
     def __repr__(self):
-        return "map with {} nodes and {} connections".format(len(self.nodes), len(self.connections))
+        return f'A node located at {self.x,self.y}'
 
-    def plot(self):
-        x = []
-        y = []
-        start_stop_x =[]
-        start_stop_y = []
-        for node in self.nodes:
-            if node == self.start or node == self.stop:
-                start_stop_x.append(node.x)
-                start_stop_y.append(node.y)
-            else:
-                x.append(node.x)
-                y.append(node.y)
-        plt.scatter(x,y, marker = 'o', c = 'gray', alpha = .3)
-        plt.scatter(start_stop_x, start_stop_y, marker = 'o', c = 'red')
-        for n1, n2 in self.connections:
-            plt.plot([n1.x, n2.x],[n1.y, n2.y], c= 'gray', alpha = .2)
+class Edge:
+    '''An edge is a line segment that connects two nodes and has a length'''
+    def __init__(self, Node1, Node2, length):
+        '''Note: Edge is bi-directional. Node1 and Node2 are interchangeable'''
+        self.nodes = [Node1, Node2]
+        self.length = length or np.random.random()*100
+
+    def __repr__(self):
+        return f'An edge of length {self.length} between {self.nodes}'
+
+
+class Map:
+    def __init__(self, rows, columns, percent_extant, percent_connected):
+        '''Create a map with (rows*columns) nodes in which percent_extant 
+        of the nodes and ercent_connected of the edges exist.'''
+        
+        self.rows = rows
+        self.columns = columns
+        self.percent_extant = percent_extant
+        self.percent_connected = percent_connected
+        self._edges = None
+        self._nodes = None
+
+    @property
+    def nodes(self):
+        if self._nodes is None:
+            nodes = [Node(x,y, self) for x in range(self.rows) for y in range(self.columns)]
+            self._nodes = np.random.choice(nodes, int(self.percent_extant/100*len(nodes)), replace = False)
+        return self._nodes
+
+    @property
+    def edges(self):
+        '''if a node has a neighbor directly right or directly above, an edge exists'''
+        if self._edges is None:
+            edges = []
+            for node1 in self.nodes:
+                i,j = node1.i, node1.j
+                for node2 in self.nodes:
+                    if (node2.i == i and node2.j == j+1) or (node2.i == i+1 and node2.j==j):
+                        edges.append(Edge(node1, node2, np.random.randint(1,100)))
+            self._edges = np.random.choice(edges, int(self.percent_connected/100*len(edges)), replace = False)
+        return self._edges
+
+
+    def show(self):
+        x = [node.x for node in self.nodes]
+        y = [node.y for node in self.nodes]
+
+        plt.scatter(x,y)
         plt.show()
 
-    def histogram(self):
-        data = [len(node.connections) for node in self.nodes]
-        plt.hist(data)
-        plt.show()
+    def __repr__(self):
+        return f'a Map with {len(self.nodes)} nodes and {len(self.edges)} edges'
 
 
-    def trim(self, verbose = False):
-        '''iteratively remove isolated and dead-end nodes until stable configuration remains'''
-        nodes = len(self.nodes)
-        while True:
-            self._remove_unconnected_nodes()
-            self._remove_dead_ends()
-            if nodes == len(self.nodes):
-                break
-            else:
-                nodes = len(self.nodes)
-                if verbose:
-                    print(self)
-                    self.plot()
+if __name__ == '__main__':
+    m = Map(4,4,70,70)
+    m.show()
 
-    def _remove_dead_ends(self):
-    # remove any nodes with 1 connection that are not start or stop
-        from collections import Counter
-        #make repetitive list of all nodes in connections
-        connected_nodes = []
-        for n1, n2 in self.connections:
-            connected_nodes.extend([n1,n2])
-        counter = Counter(connected_nodes)
-        #make list of all dead ends that have 1 connection and are not start or stop
-        dead_ends = []
-        for node, count in counter.items():
-            if node.status not in ['start','stop'] and count == 1:
-                dead_ends.append(node)
-        self.nodes = list(set(self.nodes) - set(dead_ends))
-        # delete all connections that don't have both ends in nodes
-        culled_connections = {}
-        for (n1, n2), values in self.connections.items():
-            if n1 in self.nodes and n2 in self.nodes:
-                culled_connections[(n1,n2)]=values
-        self.connections = culled_connections
-
-
-
-
-    #     '''for each node, find vector to all connected points, apply connected force
-    #     find vector to all unconnected points, apply unconnected force'''
-    '''Connected Force:
-    x<2d: force = 1-x/d
-    x>2d: force = -1
-    Unconnected Force:
-    x<1: force = 1-x
-    x>1 force = 0
-    '''
-    #
-    #     for node in self.nodes:
-    #         for connection in node.connections:
-    #
-    #         # connected_nodes = pd.DataFrame()
-    #
-    #         # unconnected_nodes = pd.DataFrame()
-    #         node.x += delta_connected_x + delta_unconnected_x
-    #         node.y += delta_connected_y + delta_unconnected_y
