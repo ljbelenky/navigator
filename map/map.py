@@ -47,6 +47,8 @@ class Map:
         self.percent_connected = percent_connected
         self._edges = None
         self._nodes = None
+        self._start = None
+        self._finish = None
 
     @property
     def nodes(self):
@@ -68,12 +70,31 @@ class Map:
             self._edges = np.random.choice(edges, int(self.percent_connected/100*len(edges)), replace = False)
         return self._edges
 
+    @property
+    def start(self):
+        if self._start is None:
+            self._start = np.random.choice(self.nodes)
+        return self._start
+
+    @property
+    def finish(self):
+        if self._finish is None:
+            self._finish = np.random.choice(self.nodes)
+        return self._finish
+
 
     def show(self):
         x = [node.x for node in self.nodes]
         y = [node.y for node in self.nodes]
-
         plt.scatter(x,y)
+
+        for edge in self.edges:
+            x = [edge.nodes[0].x, edge.nodes[1].x]
+            y = [edge.nodes[0].y, edge.nodes[1].y]
+            plt.plot(x,y)
+
+        plt.scatter(self.start.x, self.start.y, s = 400, marker = 'X', color = 'green')
+        plt.scatter(self.finish.x, self.finish.y, s = 400, marker = 'X', color = 'red')
         plt.show()
 
     def __repr__(self):
@@ -81,6 +102,6 @@ class Map:
 
 
 if __name__ == '__main__':
-    m = Map(4,4,70,70)
+    m = Map(20,20,80,80)
     m.show()
 
