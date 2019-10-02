@@ -13,6 +13,10 @@ class Node:
         self.map = street_map
 
     @property
+    def visited(self):
+        return self.earliest_arrival is not None
+
+    @property
     def edges(self):
         '''The collection of all edges that connect to this node'''
         return [edge for edge in self.map.edges if self in edge.nodes]
@@ -50,6 +54,9 @@ class Map:
         self._start = None
         self._finish = None
 
+        for _ in range(100_000):
+            self._reposition()
+
     @property
     def nodes(self):
         if self._nodes is None:
@@ -65,8 +72,8 @@ class Map:
             for node1 in self.nodes:
                 i,j = node1.i, node1.j
                 for node2 in self.nodes:
-                    if (node2.i == i and node2.j == j+1) or (node2.i == i+1 and node2.j==j):
-                        edges.append(Edge(node1, node2, np.random.randint(1,100)))
+                    if (node2.i == i and node2.j == j+1) or (node2.i == i+1 and node2.j==j) or (node2.i == i+1 and node2.j == j+1) or (node2.i == i-1 and node2.j == j+1):
+                        edges.append(Edge(node1, node2, np.random.random()))
             self._edges = np.random.choice(edges, int(self.percent_connected/100*len(edges)), replace = False)
         return self._edges
 
@@ -83,7 +90,7 @@ class Map:
         return self._finish
 
 
-    def show(self):
+    def plot(self, show = True):
         x = [node.x for node in self.nodes]
         y = [node.y for node in self.nodes]
         plt.scatter(x,y)
@@ -91,17 +98,43 @@ class Map:
         for edge in self.edges:
             x = [edge.nodes[0].x, edge.nodes[1].x]
             y = [edge.nodes[0].y, edge.nodes[1].y]
-            plt.plot(x,y)
+            plt.plot(x,y, color = 'gray')
 
         plt.scatter(self.start.x, self.start.y, s = 400, marker = 'X', color = 'green')
         plt.scatter(self.finish.x, self.finish.y, s = 400, marker = 'X', color = 'red')
-        plt.show()
+        if show:
+            plt.show()
 
     def __repr__(self):
         return f'a Map with {len(self.nodes)} nodes and {len(self.edges)} edges'
 
+    def _reposition(self):
+        lr = .5
+        for edge in self.edges:
+            center_x = (edge.nodes[0].x + edge.nodes[1].x)/2
+            center_y = (edge.nodes[0].y + edge.nodes[1].y)/2
+
+            actual_length = ((edge.nodes[0].x - edge.nodes[1].x)**2 + (edge.nodes[0].y - edge.nodes[1].y)**2)**.5
+            desired_length = edge.length
+
+            adjustment = (desired_length - actual_length) * lr
+
+            for node in edge.nodes:
+                delta_x = abs(center_x - node.x) * adjustment
+                delta_y = abs(center_y - node.y) * adjustment
+                if node.x < center_x: 
+                    node.x -= delta_x
+                else:
+                    node.x += delta_x
+
+                if node.y < center_y:
+                    node.y -= delta_y
+                else:
+                    node.y += delta_y
+                    
 
 if __name__ == '__main__':
-    m = Map(20,20,80,80)
-    m.show()
+    # plt.xkcd()
+    m = Map(10,10,80,80)
+    m.plot()
 
