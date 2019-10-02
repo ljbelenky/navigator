@@ -54,7 +54,7 @@ class Map:
         self._start = None
         self._finish = None
 
-        for _ in range(100_000):
+        for _ in range(1):
             self._reposition()
 
     @property
@@ -73,7 +73,7 @@ class Map:
                 i,j = node1.i, node1.j
                 for node2 in self.nodes:
                     if (node2.i == i and node2.j == j+1) or (node2.i == i+1 and node2.j==j) or (node2.i == i+1 and node2.j == j+1) or (node2.i == i-1 and node2.j == j+1):
-                        edges.append(Edge(node1, node2, np.random.random()))
+                        edges.append(Edge(node1, node2, 2*np.random.random()))
             self._edges = np.random.choice(edges, int(self.percent_connected/100*len(edges)), replace = False)
         return self._edges
 
@@ -132,9 +132,56 @@ class Map:
                 else:
                     node.y += delta_y
                     
+class Car:
+    def __init__(self, initial_position):
+        self.odometer = 0
+        self.history = [initial_position]
+
+    def drive(self, edge):
+        self.odometer += edge.length
+        destination = list(set(edge.nodes)-{self.current_position})[0]
+        destination.earliest_arrival = min(destination.earliest_arrival, self.odometer)
+        self.history.append(destination)
+
+    @property
+    def is_first_at_node(self):
+        return self.odometer == self.current_position.earliest_arrival
+
+    def arrived(self, finish):
+        return self.current_position == finish
+
+
+    @property
+    def current_position(self):
+        return self.history[-1]
+
+
+class Fleet:
+    def __init__(self, street_map):
+        self.map = street_map
+        self.current_best = None
+
+        if (self.map.start.edges == []) or (self.map.finish.edges == []):
+            print('Start or Finish are isolated. Cannot proceed')    
+        elif street_map.start == street_map.finish:
+            print('Start and Finish are the same')
+        else: 
+            # Create One Car at the start to begin
+            self.cars = [Car(self.map.start)]
+
+    def move(self):
+        pass
+
+
+        
+
+
+
+
+
 
 if __name__ == '__main__':
     # plt.xkcd()
-    m = Map(10,10,80,80)
+    m = Map(75,75,60,60)
     m.plot()
 
