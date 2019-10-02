@@ -1,6 +1,7 @@
 import numpy as np
-import pandas as pd
+from copy import deepcopy
 import matplotlib.pyplot as plt
+from collections import OrderedDict
 
 class Node:
     '''A Node is a point on a graph that has X,Y coordinates and is connected to zero or more edges. It also records the lowest odomter of cars that visit it.'''
@@ -9,7 +10,7 @@ class Node:
         #i and j are logical positions, x and y are physical position
         self.x = self.i = x
         self.y = self.j = y
-        self.earliest_arrival = None
+        self.earliest_arrival = np.inf
         self.map = street_map
 
     @property
@@ -54,8 +55,8 @@ class Map:
         self._start = None
         self._finish = None
 
-        for _ in range(1):
-            self._reposition()
+        # for _ in range(1):
+        #     self._reposition()
 
     @property
     def nodes(self):
@@ -81,6 +82,7 @@ class Map:
     def start(self):
         if self._start is None:
             self._start = np.random.choice(self.nodes)
+            self._start.earliest_arrival = 0
         return self._start
 
     @property
@@ -135,17 +137,25 @@ class Map:
 class Car:
     def __init__(self, initial_position):
         self.odometer = 0
-        self.history = [initial_position]
+        self.history = OrderedDict({initial_position:0})
 
     def drive(self, edge):
         self.odometer += edge.length
         destination = list(set(edge.nodes)-{self.current_position})[0]
         destination.earliest_arrival = min(destination.earliest_arrival, self.odometer)
-        self.history.append(destination)
+        self.history[destination] = self.odometer
+        return deepcopy(self)
 
     @property
-    def is_first_at_node(self):
-        return self.odometer == self.current_position.earliest_arrival
+    def is_first_at_every_node(self):
+
+        result = True
+        for node, odometer in self.history.items():
+            if odometer > node.earliest_arrival:
+                result = False
+                break
+
+        return result
 
     def arrived(self, finish):
         return self.current_position == finish
@@ -153,35 +163,65 @@ class Car:
 
     @property
     def current_position(self):
-        return self.history[-1]
+        return list(self.history.keys())[-1]
 
-
-class Fleet:
-    def __init__(self, street_map):
-        self.map = street_map
-        self.current_best = None
-
-        if (self.map.start.edges == []) or (self.map.finish.edges == []):
-            print('Start or Finish are isolated. Cannot proceed')    
-        elif street_map.start == street_map.finish:
-            print('Start and Finish are the same')
-        else: 
-            # Create One Car at the start to begin
-            self.cars = [Car(self.map.start)]
-
-    def move(self):
-        pass
-
-
-        
-
-
-
-
+def best_finishing_odometer(finished_cars):
+    try:
+        return min([car.odometer for car in finished_cars])
+    except:
+        return np.inf
 
 
 if __name__ == '__main__':
     # plt.xkcd()
-    m = Map(75,75,60,60)
-    m.plot()
+    m = Map(6,6,100,100)
+    # Check that we have a valid map
+
+    if m.start.edges == []:
+        print('No roads lead away from start')
+    elif m.finish.edges == []:
+        print('No roads lead to finish')
+    elif m.start == m.finish:
+        print('Start and Finish are the same')
+
+    else:
+        print("Let's get started...")
+
+        m.plot()
+
+        finished_cars = []
+        
+        #start by making one car at the starting node
+        active_cars = [Car(m.start)]
+
+        iteration = 0
+
+        while len(active_cars) > 0:
+            print(iteration)
+            iteration += 1
+
+            new_cars = []
+            for car in active_cars:
+                for edge in car.current_position.edges:
+                    new_car = car.drive(edge)
+
+                    if new_car.current_position == m.finish:
+                        print('A car has finished!')
+                        finished_cars.append(new_car)
+                    elif new_car.is_first_at_every_node:
+                        print('is first')
+                        if (new_car.odometer < best_finishing_odometer(finished_cars)):
+                            new_cars.append(new_car)
+
+            active_cars = deepcopy(new_cars)
+            print(f'number of active cars: {len(active_cars)}')
+
+        print(len(finished_cars))
+
+
+
+
+
+
+
 
