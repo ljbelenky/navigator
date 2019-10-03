@@ -30,6 +30,7 @@ class Node:
     def __repr__(self):
         return f'A node located at {self.x,self.y}'
 
+
 class Edge:
     '''An edge is a line segment that connects two nodes and has a length'''
     def __init__(self, Node1, Node2, length):
@@ -55,8 +56,8 @@ class Map:
         self._start = None
         self._finish = None
 
-        # for _ in range(1):
-        #     self._reposition()
+        for _ in range(1):
+            self._reposition()
 
     @property
     def nodes(self):
@@ -140,11 +141,12 @@ class Car:
         self.history = OrderedDict({initial_position:0})
 
     def drive(self, edge):
-        self.odometer += edge.length
+        new_car = deepcopy(self)
+        new_car.odometer += edge.length
         destination = list(set(edge.nodes)-{self.current_position})[0]
-        destination.earliest_arrival = min(destination.earliest_arrival, self.odometer)
-        self.history[destination] = self.odometer
-        return deepcopy(self)
+        destination.earliest_arrival = min(destination.earliest_arrival, new_car.odometer)
+        new_car.history[destination] = new_car.odometer
+        return new_car
 
     @property
     def is_first_at_every_node(self):
@@ -174,7 +176,7 @@ def best_finishing_odometer(finished_cars):
 
 if __name__ == '__main__':
     # plt.xkcd()
-    m = Map(6,6,100,100)
+    m = Map(12,12,80,80)
     # Check that we have a valid map
 
     if m.start.edges == []:
@@ -188,8 +190,10 @@ if __name__ == '__main__':
         print("Let's get started...")
 
         m.plot()
+        input()
 
         finished_cars = []
+        nodes_visited = {m.start}
         
         #start by making one car at the starting node
         active_cars = [Car(m.start)]
@@ -204,12 +208,12 @@ if __name__ == '__main__':
             for car in active_cars:
                 for edge in car.current_position.edges:
                     new_car = car.drive(edge)
+                    nodes_visited |= {new_car.current_position}
 
-                    if new_car.current_position == m.finish:
+                    if (new_car.current_position.i == m.finish.i) and (new_car.current_position.j == m.finish.j):
                         print('A car has finished!')
                         finished_cars.append(new_car)
                     elif new_car.is_first_at_every_node:
-                        print('is first')
                         if (new_car.odometer < best_finishing_odometer(finished_cars)):
                             new_cars.append(new_car)
 
