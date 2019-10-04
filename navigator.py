@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd 
 from copy import deepcopy, copy 
 import matplotlib.pyplot as plt
 from collections import OrderedDict
@@ -23,10 +22,6 @@ class Node:
         '''The collection of all edges that connect to this node'''
         return [edge for edge in self.map.edges if self in edge.nodes]
 
-    # @property
-    # def neighbors(self):
-    #     '''The nodes that are connected to the edges connected to this node'''
-    #     return set([edge.nodes for edge in self.edges]) - {self}
 
     def __repr__(self):
         return f'A node located at {self.x,self.y}'
@@ -43,14 +38,9 @@ class Edge:
         return f'An edge of length {self.length} between {self.nodes}'
 
     def other_end(self, node):
-        # if (node.i, node.j) == (self.nodes[0].i, self.nodes[0].j):
-        #     return self.nodes[1]
-        # else: return self.nodes[0]
         if node == self.nodes[0]:
             return self.nodes[1]
         return self.nodes[0]
-
-
 
 class Map:
     def __init__(self, rows, columns, percent_extant, percent_connected):
@@ -65,9 +55,6 @@ class Map:
         self._nodes = None
         self._start = None
         self._finish = None
-
-        # for _ in range(1):
-        #     self._reposition()
 
     @property
     def nodes(self):
@@ -115,7 +102,7 @@ class Map:
         x = [node.x for node in self.nodes]
         y = [node.y for node in self.nodes]
         colors = [{True:'green',False:'red'}[node.visited] for node in self.nodes]
-        plt.scatter(x,y, c= colors, s = 10)
+        plt.scatter(x,y, c= colors, s = 20)
 
 
         plt.scatter(self.start.x, self.start.y, s = 400, marker = 'X', color = 'green')
@@ -125,37 +112,11 @@ class Map:
 
     def __repr__(self):
         return f'a Map with {len(self.nodes)} nodes and {len(self.edges)} edges'
-
-    # def _reposition(self):
-    #     lr = .5
-    #     for edge in self.edges:
-    #         center_x = (edge.nodes[0].x + edge.nodes[1].x)/2
-    #         center_y = (edge.nodes[0].y + edge.nodes[1].y)/2
-
-    #         actual_length = ((edge.nodes[0].x - edge.nodes[1].x)**2 + (edge.nodes[0].y - edge.nodes[1].y)**2)**.5
-    #         desired_length = edge.length
-
-    #         adjustment = (desired_length - actual_length) * lr
-
-    #         for node in edge.nodes:
-    #             delta_x = abs(center_x - node.x) * adjustment
-    #             delta_y = abs(center_y - node.y) * adjustment
-    #             if node.x < center_x: 
-    #                 node.x -= delta_x
-    #             else:
-    #                 node.x += delta_x
-
-    #             if node.y < center_y:
-    #                 node.y -= delta_y
-    #             else:
-    #                 node.y += delta_y
                  
 class Car:
     def __init__(self, initial_position = None):
         if initial_position:
             self.history = OrderedDict({initial_position:0})
-            # self.node_history = [initial_position]
-            # self.odometer_history = [0]
 
     def has_visited(self, node):
         # return node in self.node_history
@@ -169,95 +130,66 @@ class Car:
     def drive(self, edge):
         new_car = Car()
         destination = edge.other_end(self.current_position)
-        # new_car.node_history = [node for node in self.node_history]
         new_car.history = OrderedDict({node:odo for node, odo in self.history.items()})
-        # new_car.node_history.append(destination)
-        # new_car.odometer_history = [odo for odo in self.odometer_history]
-        # new_car.odometer_history.append(new_car.odometer + edge.length)
         new_car.history[destination] = new_car.odometer + edge.length
-        # print(new_car.odometer)
         destination.earliest_arrival = min(destination.earliest_arrival, new_car.odometer)
         return new_car
 
     @property
     def is_first_at_every_node(self):
-        # for node, odometer in zip(self.node_history, self.odometer_history):
-        #     if odometer > node.earliest_arrival:
-        #         return False
-        # return True
-
         return all([odometer == node.earliest_arrival for node, odometer in self.history.items()])
-
-        # for node, odometer in self.history.items():
-        #     if odometer > node.earliest_arrival:
-        #         return False
-        # return True
-
-    # @property
-    # def index_history(self):
-    #     return [(node.x, node.y) for node in self.history.keys()]
 
     @property
     def current_position(self):
         # return self.node_history[-1]
         return list(self.history.keys())[-1]
 
+    def plot(self, color):
+        x = [node.x for node in self.history.keys()]
+        y = [node.y for node in self.history.keys()]
+
+        plt.plot(x, y, color = color, lw = 5)
+
 
 if __name__ == '__main__':
-    m = Map(30,30,80,80)
+    m = Map(200,200,80,80)
 
-    # Check that we have a valid map
+    print("Let's get started...")
 
-    if m.start.edges == []:
-        print('No roads lead away from start')
-    elif m.finish.edges == []:
-        print('No roads lead to finish')
-    elif m.start == m.finish:
-        print('Start and Finish are the same')
+    finished_cars = []
+    # nodes_visited = {m.start}
+    
+    #start by making one car at the starting nodezz
+    active_cars = [Car(m.start)]
 
+    iteration = 1
+
+    while len(active_cars) > 0:
+        print('Iteration: ', iteration)
+        iteration += 1
+
+        new_cars = []
+        for car in [car for car in active_cars if car.is_first_at_every_node and (car.odometer < m.finish.earliest_arrival)]:
+            for edge in [edge for edge in car.current_position.edges if not car.has_visited(edge.other_end(car.current_position))]:
+
+                new_car = car.drive(edge)
+                if new_car.current_position == m.finish:
+                    print('A car has finished!')
+                    finished_cars.append(new_car)
+                elif new_car.is_first_at_every_node and (new_car.odometer < m.finish.earliest_arrival):
+                        new_cars.append(new_car)
+
+        active_cars = copy(new_cars)
+        print(f'number of active cars: {len(active_cars)}')
+
+    m.plot()
+
+    if finished_cars == []:
+        print('There is not path from start to finish')
     else:
-        print("Let's get started...")
+        [car.plot('orange') for car in finished_cars if car.odometer != m.finish.earliest_arrival]
+        [car.plot('blue') for car in finished_cars if car.odometer == m.finish.earliest_arrival]
 
-
-
-        finished_cars = []
-        # nodes_visited = {m.start}
-        
-        #start by making one car at the starting nodezz
-        active_cars = [Car(m.start)]
-
-        iteration = 1
-
-        while len(active_cars) > 0:
-            print('Iteration: ', iteration)
-            iteration += 1
-
-            new_cars = []
-            for car in [car for car in active_cars if car.is_first_at_every_node and (car.odometer < m.finish.earliest_arrival)]:
-                for edge in [edge for edge in car.current_position.edges if not car.has_visited(edge.other_end(car.current_position))]:
-
-                    new_car = car.drive(edge)
-
-                    # if (new_car.current_position.i, new_car.current_position.j) == (m.finish.i, m.finish.j):
-                    if new_car.current_position == m.finish:
-                        print('A car has finished!')
-                        finished_cars.append(new_car)
-                    elif new_car.is_first_at_every_node and (new_car.odometer < m.finish.earliest_arrival):
-                            new_cars.append(new_car)
-                    # else:
-                    #     del new_car
-
-            active_cars = copy(new_cars)
-            print(f'number of active cars: {len(active_cars)}')
-
-        
-        best_odo = min([car.odometer for car in finished_cars])
-        best_car = [car for car in finished_cars if car.odometer == best_odo][0]
-        best_path = best_car.history.keys()
-
-        m.plot()
-        for n in best_path:
-            plt.scatter(n.x, n.y, color = 'blue', s = 100)
 
 
 
