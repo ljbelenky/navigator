@@ -147,31 +147,40 @@ class Map:
 class Car:
     def __init__(self, initial_position = None):
         if initial_position:
-            # self.history = OrderedDict({initial_position:0})
-            self.node_history = [initial_position]
-            self.odometer_history = [0]
+            self.history = OrderedDict({initial_position:0})
+            # self.node_history = [initial_position]
+            # self.odometer_history = [0]
 
     def has_visited(self, node):
-        return node in self.node_history
+        # return node in self.node_history
+        return node in self.history.keys()
 
     @property
     def odometer(self):
-        return self.odometer_history[-1]
+        # return self.odometer_history[-1]
+        return list(self.history.values())[-1]
 
     def drive(self, edge):
         new_car = Car()
         destination = edge.other_end(self.current_position)
-        new_car.node_history = [node for node in self.node_history]
-        new_car.node_history.append(destination)
-        new_car.odometer_history = [odo for odo in self.odometer_history]
-        new_car.odometer_history.append(new_car.odometer + edge.length)
+        # new_car.node_history = [node for node in self.node_history]
+        new_car.history = OrderedDict({node:odo for node, odo in self.history.items()})
+        # new_car.node_history.append(destination)
+        # new_car.odometer_history = [odo for odo in self.odometer_history]
+        # new_car.odometer_history.append(new_car.odometer + edge.length)
+        new_car.history[destination] = new_car.odometer + edge.length
         # print(new_car.odometer)
         destination.earliest_arrival = min(destination.earliest_arrival, new_car.odometer)
         return new_car
 
     @property
     def is_first_at_every_node(self):
-        for node, odometer in zip(self.node_history, self.odometer_history):
+        # for node, odometer in zip(self.node_history, self.odometer_history):
+        #     if odometer > node.earliest_arrival:
+        #         return False
+        # return True
+
+        for node, odometer in self.history.items():
             if odometer > node.earliest_arrival:
                 return False
         return True
@@ -182,11 +191,13 @@ class Car:
 
     @property
     def current_position(self):
-        return self.node_history[-1]
+        # return self.node_history[-1]
+        return list(self.history.keys())[-1]
 
 
 if __name__ == '__main__':
-    m = Map(150,150,60,60)
+    m = Map(20,20,80,80)
+
     # Check that we have a valid map
 
     if m.start.edges == []:
@@ -216,6 +227,7 @@ if __name__ == '__main__':
             new_cars = []
             for car in [car for car in active_cars if car.is_first_at_every_node and (car.odometer < m.finish.earliest_arrival)]:
                 for edge in [edge for edge in car.current_position.edges if not car.has_visited(edge.other_end(car.current_position))]:
+
                     new_car = car.drive(edge)
 
                     if (new_car.current_position.i, new_car.current_position.j) == (m.finish.i, m.finish.j):
@@ -232,7 +244,7 @@ if __name__ == '__main__':
         
         best_odo = min([car.odometer for car in finished_cars])
         best_car = [car for car in finished_cars if car.odometer == best_odo][0]
-        best_path = best_car.node_history
+        best_path = best_car.history.keys()
 
         m.plot()
         for n in best_path:
