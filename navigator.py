@@ -109,7 +109,7 @@ class Map:
         x = [node.x for node in self.nodes]
         y = [node.y for node in self.nodes]
         colors = [{True:'green',False:'red'}[node.visited] for node in self.nodes]
-        plt.scatter(x,y, c= colors)
+        plt.scatter(x,y, c= colors, s = 10)
 
 
         plt.scatter(self.start.x, self.start.y, s = 400, marker = 'X', color = 'green')
@@ -207,10 +207,10 @@ if __name__ == '__main__':
         #start by making one car at the starting nodezz
         active_cars = [Car(m.start)]
 
-        iteration = 0
+        iteration = 1
 
         while len(active_cars) > 0:
-            print(iteration)
+            print('Iteration: ', iteration)
             iteration += 1
 
             new_cars = []
