@@ -1,5 +1,6 @@
 import numpy as np
-from copy import deepcopy
+import pandas as pd 
+from copy import deepcopy, copy 
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 
@@ -99,15 +100,17 @@ class Map:
 
 
     def plot(self, show = True):
-        x = [node.x for node in self.nodes]
-        y = [node.y for node in self.nodes]
-        colors = [{True:'green',False:'red'}[node.visited] for node in self.nodes]
-        plt.scatter(x,y, c= colors)
 
         for edge in self.edges:
             x = [edge.nodes[0].x, edge.nodes[1].x]
             y = [edge.nodes[0].y, edge.nodes[1].y]
             plt.plot(x,y, color = 'gray')
+
+        x = [node.x for node in self.nodes]
+        y = [node.y for node in self.nodes]
+        colors = [{True:'green',False:'red'}[node.visited] for node in self.nodes]
+        plt.scatter(x,y, c= colors)
+
 
         plt.scatter(self.start.x, self.start.y, s = 400, marker = 'X', color = 'green')
         plt.scatter(self.finish.x, self.finish.y, s = 400, marker = 'X', color = 'red')
@@ -140,18 +143,24 @@ class Map:
                     node.y -= delta_y
                 else:
                     node.y += delta_y
-                    
+                 
 class Car:
-    def __init__(self, initial_position):
-        self.odometer = 0
-        self.history = OrderedDict({initial_position:0})
+    def __init__(self, initial_position = None):
+        if initial_position:
+            self.history = OrderedDict({initial_position:0})
+
+    @property
+    def odometer(self):
+        return max(self.history.values())
 
     def drive(self, edge):
-        new_car = deepcopy(self)
-        new_car.odometer += edge.length
+        new_car = Car()
+        new_car.history = OrderedDict({node:odo for node, odo in self.history.items()})
+        
         destination, _ = edge.other_end(self.current_position)
+        
+        new_car.history[destination] = new_car.odometer + edge.length
         destination.earliest_arrival = min(destination.earliest_arrival, new_car.odometer)
-        new_car.history[destination] = new_car.odometer
         return new_car
 
     @property
@@ -169,16 +178,9 @@ class Car:
     def current_position(self):
         return list(self.history.keys())[-1]
 
-def best_finishing_odometer(finished_cars):
-    try:
-        return min([car.odometer for car in finished_cars])
-    except:
-        return np.inf
-
 
 if __name__ == '__main__':
-    # plt.xkcd()
-    m = Map(20,20,80,40)
+    m = Map(100,100,70,70)
     # Check that we have a valid map
 
     if m.start.edges == []:
@@ -196,7 +198,7 @@ if __name__ == '__main__':
         finished_cars = []
         # nodes_visited = {m.start}
         
-        #start by making one car at the starting node
+        #start by making one car at the starting nodezz
         active_cars = [Car(m.start)]
 
         iteration = 0
@@ -206,17 +208,14 @@ if __name__ == '__main__':
             iteration += 1
 
             new_cars = []
-            for car in [car for car in active_cars if car.is_first_at_every_node and (car.odometer < best_finishing_odometer(finished_cars))]:
-                edges = [edge for edge in car.current_position.edges if edge.other_end(car.current_position)[1] not in car.index_history]
-
-                for edge in car.current_position.edges:
+            for car in [car for car in active_cars if car.is_first_at_every_node and (car.odometer < m.finish.earliest_arrival)]:
+                for edge in [edge for edge in car.current_position.edges if edge.other_end(car.current_position)[1] not in car.index_history]:
                     new_car = car.drive(edge)
-                    # nodes_visited |= {new_car.current_position}
 
                     if (new_car.current_position.i, new_car.current_position.j) == (m.finish.i, m.finish.j):
                         print('A car has finished!')
                         finished_cars.append(new_car)
-                    elif new_car.is_first_at_every_node and (new_car.odometer < best_finishing_odometer(finished_cars)):
+                    elif new_car.is_first_at_every_node and (new_car.odometer < m.finish.earliest_arrival):
                             new_cars.append(new_car)
                     else:
                         del new_car
