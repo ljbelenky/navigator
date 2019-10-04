@@ -135,7 +135,6 @@ class Car:
 
     @property
     def odometer(self):
-        # return self.odometer_history[-1]
         return list(self.history.values())[-1]
 
     def drive(self, edge):
@@ -168,7 +167,7 @@ class Car:
 
 
 if __name__ == '__main__':
-    m = Map(100, 100, 60, 70)
+    m = Map(150, 150, 60, 60)
 
     print("Let's get started...")
 
