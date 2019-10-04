@@ -2,11 +2,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 
+
 class Node:
     '''A Node is a point on a graph that has X,Y coordinates and is connected to zero or more edges. It also records the lowest odomter of cars that visit it.'''
 
     def __init__(self, x, y, street_map):
-        #i and j are logical positions, x and y are physical position
+        # i and j are logical positions, x and y are physical position
         self.x = self.i = x
         self.y = self.j = y
         self.earliest_arrival = np.inf
@@ -27,6 +28,7 @@ class Node:
 
 class Edge:
     '''An edge is a line segment that connects two nodes and has a length'''
+
     def __init__(self, Node1, Node2, length):
         '''Note: Edge is bi-directional. Node1 and Node2 are interchangeable'''
         self.nodes = [Node1, Node2]
@@ -40,11 +42,12 @@ class Edge:
             return self.nodes[1]
         return self.nodes[0]
 
+
 class Map:
     def __init__(self, rows, columns, percent_extant, percent_connected):
         '''Create a map with (rows*columns) nodes in which percent_extant 
         of the nodes and ercent_connected of the edges exist.'''
-        
+
         self.rows = rows
         self.columns = columns
         self.percent_extant = percent_extant
@@ -57,8 +60,10 @@ class Map:
     @property
     def nodes(self):
         if self._nodes is None:
-            nodes = [Node(x,y, self) for x in range(self.rows) for y in range(self.columns)]
-            self._nodes = np.random.choice(nodes, int(self.percent_extant/100*len(nodes)), replace = False)
+            nodes = [Node(x, y, self) for x in range(self.rows)
+                     for y in range(self.columns)]
+            self._nodes = np.random.choice(nodes, int(
+                self.percent_extant/100*len(nodes)), replace=False)
         return self._nodes
 
     @property
@@ -67,11 +72,12 @@ class Map:
         if self._edges is None:
             edges = []
             for node1 in self.nodes:
-                i,j = node1.i, node1.j
+                i, j = node1.i, node1.j
                 for node2 in self.nodes:
-                    if (node2.i == i and node2.j == j+1) or (node2.i == i+1 and node2.j==j) or (node2.i == i+1 and node2.j == j+1) or (node2.i == i-1 and node2.j == j+1):
+                    if (node2.i == i and node2.j == j+1) or (node2.i == i+1 and node2.j == j) or (node2.i == i+1 and node2.j == j+1) or (node2.i == i-1 and node2.j == j+1):
                         edges.append(Edge(node1, node2, 2*np.random.random()))
-            self._edges = np.random.choice(edges, int(self.percent_connected/100*len(edges)), replace = False)
+            self._edges = np.random.choice(edges, int(
+                self.percent_connected/100*len(edges)), replace=False)
         return self._edges
 
     @property
@@ -86,33 +92,38 @@ class Map:
         if self._finish is None:
             while True:
                 self._finish = np.random.choice(self.nodes)
-                if self._finish != self.start: break
+                if self._finish != self.start:
+                    break
         return self._finish
 
-    def plot(self, show = True):
+    def plot(self, show=True):
 
         for edge in self.edges:
             x = [edge.nodes[0].x, edge.nodes[1].x]
             y = [edge.nodes[0].y, edge.nodes[1].y]
-            plt.plot(x,y, color = 'gray', alpha = .5)
+            plt.plot(x, y, color='gray', alpha=.5)
 
         x = [node.x for node in self.nodes]
         y = [node.y for node in self.nodes]
-        colors = [{True:'green',False:'red'}[node.visited] for node in self.nodes]
-        plt.scatter(x,y, c= colors, s = 20)
+        colors = [{True: 'green', False: 'red'}[node.visited]
+                  for node in self.nodes]
+        plt.scatter(x, y, c=colors, s=20)
 
-        plt.scatter(self.start.x, self.start.y, s = 400, marker = 'X', color = 'green')
-        plt.scatter(self.finish.x, self.finish.y, s = 400, marker = 'X', color = 'red')
+        plt.scatter(self.start.x, self.start.y,
+                    s=400, marker='X', color='green')
+        plt.scatter(self.finish.x, self.finish.y,
+                    s=400, marker='X', color='red')
         if show:
             plt.show()
 
     def __repr__(self):
         return f'a Map with {len(self.nodes)} nodes and {len(self.edges)} edges'
-                 
+
+
 class Car:
-    def __init__(self, initial_position = None):
+    def __init__(self, initial_position=None):
         if initial_position:
-            self.history = OrderedDict({initial_position:0})
+            self.history = OrderedDict({initial_position: 0})
 
     def has_visited(self, node):
         # return node in self.node_history
@@ -130,9 +141,11 @@ class Car:
     def drive(self, edge):
         new_car = Car()
         destination = edge.other_end(self.current_position)
-        new_car.history = OrderedDict({node:odo for node, odo in self.history.items()})
+        new_car.history = OrderedDict(
+            {node: odo for node, odo in self.history.items()})
         new_car.history[destination] = new_car.odometer + edge.length
-        destination.earliest_arrival = min(destination.earliest_arrival, new_car.odometer)
+        destination.earliest_arrival = min(
+            destination.earliest_arrival, new_car.odometer)
         return new_car
 
     @property
@@ -148,13 +161,14 @@ class Car:
         x = [node.x for node in self.history.keys()]
         y = [node.y for node in self.history.keys()]
 
-        plt.plot(x, y, color = color, lw = 5)
+        plt.plot(x, y, color=color, lw=5)
 
     def __repr__(self):
         return f'A Car located at {self.current_position}'
 
+
 if __name__ == '__main__':
-    m = Map(100,100,60,70)
+    m = Map(100, 100, 60, 70)
 
     print("Let's get started...")
 
@@ -175,7 +189,8 @@ if __name__ == '__main__':
                 else:
                     new_cars.append(new_car)
 
-        active_cars = [car for car in new_cars if car.is_first_at_every_node and (car.odometer < m.finish.earliest_arrival)]
+        active_cars = [car for car in new_cars if car.is_first_at_every_node and (
+            car.odometer < m.finish.earliest_arrival)]
         print(f'number of active cars: {len(active_cars)}')
 
     m.plot()
@@ -183,5 +198,7 @@ if __name__ == '__main__':
     if finished_cars == []:
         print('There is no path from start to finish')
     else:
-        [car.plot('orange') for car in finished_cars if car.odometer != m.finish.earliest_arrival]
-        [car.plot('blue') for car in finished_cars if car.odometer == m.finish.earliest_arrival]
+        [car.plot('orange') for car in finished_cars if car.odometer !=
+         m.finish.earliest_arrival]
+        [car.plot('blue') for car in finished_cars if car.odometer ==
+         m.finish.earliest_arrival]
