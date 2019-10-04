@@ -23,10 +23,10 @@ class Node:
         '''The collection of all edges that connect to this node'''
         return [edge for edge in self.map.edges if self in edge.nodes]
 
-    @property
-    def neighbors(self):
-        '''The nodes that are connected to the edges connected to this node'''
-        return set([edge.nodes for edge in self.edges]) - {self}
+    # @property
+    # def neighbors(self):
+    #     '''The nodes that are connected to the edges connected to this node'''
+    #     return set([edge.nodes for edge in self.edges]) - {self}
 
     def __repr__(self):
         return f'A node located at {self.x,self.y}'
@@ -43,9 +43,13 @@ class Edge:
         return f'An edge of length {self.length} between {self.nodes}'
 
     def other_end(self, node):
-        if (node.i, node.j) == (self.nodes[0].i, self.nodes[0].j):
+        # if (node.i, node.j) == (self.nodes[0].i, self.nodes[0].j):
+        #     return self.nodes[1]
+        # else: return self.nodes[0]
+        if node == self.nodes[0]:
             return self.nodes[1]
-        else: return self.nodes[0]
+        return self.nodes[0]
+
 
 
 class Map:
@@ -95,7 +99,9 @@ class Map:
     @property
     def finish(self):
         if self._finish is None:
-            self._finish = np.random.choice(self.nodes)
+            while True:
+                self._finish = np.random.choice(self.nodes)
+                if self._finish != self.start: break
         return self._finish
 
 
@@ -104,7 +110,7 @@ class Map:
         for edge in self.edges:
             x = [edge.nodes[0].x, edge.nodes[1].x]
             y = [edge.nodes[0].y, edge.nodes[1].y]
-            plt.plot(x,y, color = 'gray')
+            plt.plot(x,y, color = 'gray', alpha = .5)
 
         x = [node.x for node in self.nodes]
         y = [node.y for node in self.nodes]
@@ -120,29 +126,29 @@ class Map:
     def __repr__(self):
         return f'a Map with {len(self.nodes)} nodes and {len(self.edges)} edges'
 
-    def _reposition(self):
-        lr = .5
-        for edge in self.edges:
-            center_x = (edge.nodes[0].x + edge.nodes[1].x)/2
-            center_y = (edge.nodes[0].y + edge.nodes[1].y)/2
+    # def _reposition(self):
+    #     lr = .5
+    #     for edge in self.edges:
+    #         center_x = (edge.nodes[0].x + edge.nodes[1].x)/2
+    #         center_y = (edge.nodes[0].y + edge.nodes[1].y)/2
 
-            actual_length = ((edge.nodes[0].x - edge.nodes[1].x)**2 + (edge.nodes[0].y - edge.nodes[1].y)**2)**.5
-            desired_length = edge.length
+    #         actual_length = ((edge.nodes[0].x - edge.nodes[1].x)**2 + (edge.nodes[0].y - edge.nodes[1].y)**2)**.5
+    #         desired_length = edge.length
 
-            adjustment = (desired_length - actual_length) * lr
+    #         adjustment = (desired_length - actual_length) * lr
 
-            for node in edge.nodes:
-                delta_x = abs(center_x - node.x) * adjustment
-                delta_y = abs(center_y - node.y) * adjustment
-                if node.x < center_x: 
-                    node.x -= delta_x
-                else:
-                    node.x += delta_x
+    #         for node in edge.nodes:
+    #             delta_x = abs(center_x - node.x) * adjustment
+    #             delta_y = abs(center_y - node.y) * adjustment
+    #             if node.x < center_x: 
+    #                 node.x -= delta_x
+    #             else:
+    #                 node.x += delta_x
 
-                if node.y < center_y:
-                    node.y -= delta_y
-                else:
-                    node.y += delta_y
+    #             if node.y < center_y:
+    #                 node.y -= delta_y
+    #             else:
+    #                 node.y += delta_y
                  
 class Car:
     def __init__(self, initial_position = None):
@@ -180,10 +186,12 @@ class Car:
         #         return False
         # return True
 
-        for node, odometer in self.history.items():
-            if odometer > node.earliest_arrival:
-                return False
-        return True
+        return all([odometer == node.earliest_arrival for node, odometer in self.history.items()])
+
+        # for node, odometer in self.history.items():
+        #     if odometer > node.earliest_arrival:
+        #         return False
+        # return True
 
     # @property
     # def index_history(self):
@@ -196,7 +204,7 @@ class Car:
 
 
 if __name__ == '__main__':
-    m = Map(20,20,80,80)
+    m = Map(30,30,80,80)
 
     # Check that we have a valid map
 
@@ -230,13 +238,14 @@ if __name__ == '__main__':
 
                     new_car = car.drive(edge)
 
-                    if (new_car.current_position.i, new_car.current_position.j) == (m.finish.i, m.finish.j):
+                    # if (new_car.current_position.i, new_car.current_position.j) == (m.finish.i, m.finish.j):
+                    if new_car.current_position == m.finish:
                         print('A car has finished!')
                         finished_cars.append(new_car)
                     elif new_car.is_first_at_every_node and (new_car.odometer < m.finish.earliest_arrival):
                             new_cars.append(new_car)
-                    else:
-                        del new_car
+                    # else:
+                    #     del new_car
 
             active_cars = copy(new_cars)
             print(f'number of active cars: {len(active_cars)}')
