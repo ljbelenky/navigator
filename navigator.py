@@ -153,7 +153,6 @@ class Car:
 
     @property
     def current_position(self):
-        # return self.node_history[-1]
         return list(self.history.keys())[-1]
 
     def plot(self, color):
