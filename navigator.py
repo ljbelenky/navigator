@@ -8,7 +8,6 @@ class Node:
     '''A Node is a point on a graph that has X,Y coordinates and is connected to zero or more edges. It also records the lowest odomter of cars that visit it.'''
 
     def __init__(self, x, y, street_map):
-        # i and j are logical positions, x and y are physical position
         self.x = self.i = x
         self.y = self.j = y
         self.earliest_arrival = np.inf
@@ -127,7 +126,6 @@ class Car:
             self.history = OrderedDict({initial_position: 0})
 
     def has_visited(self, node):
-        # return node in self.node_history
         return node in self.history.keys()
 
     @property
@@ -139,17 +137,19 @@ class Car:
         return list(self.history.values())[-1]
 
     def drive(self, edge):
-        new_car = Car()
         destination = edge.other_end(self.current_position)
-        new_car.history = copy(self.history)
-        new_car.history[destination] = new_car.odometer + edge.length
+        self.history[destination] = self.odometer + edge.length
         destination.earliest_arrival = min(
-            destination.earliest_arrival, new_car.odometer)
-        return new_car
+            destination.earliest_arrival, self.odometer)
 
     @property
     def is_first_at_every_node(self):
         return all([odometer == node.earliest_arrival for node, odometer in self.history.items()])
+
+    def clone(self):
+        clone = Car()
+        clone.history = copy(self.history)
+        return clone
 
     @property
     def current_position(self):
@@ -180,7 +180,8 @@ if __name__ == '__main__':
         new_cars = []
         for car in active_cars:
             for edge in car.unvisited_edges:
-                new_car = car.drive(edge)
+                new_car = car.clone()
+                new_car.drive(edge)
                 if new_car.current_position == m.finish:
                     print('A car has finished!')
                     finished_cars.append(new_car)
