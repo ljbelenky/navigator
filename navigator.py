@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import OrderedDict
+from copy import copy
 
 
 class Node:
@@ -140,8 +141,7 @@ class Car:
     def drive(self, edge):
         new_car = Car()
         destination = edge.other_end(self.current_position)
-        new_car.history = OrderedDict(
-            {node: odo for node, odo in self.history.items()})
+        new_car.history = copy(self.history)
         new_car.history[destination] = new_car.odometer + edge.length
         destination.earliest_arrival = min(
             destination.earliest_arrival, new_car.odometer)
@@ -166,7 +166,7 @@ class Car:
 
 
 if __name__ == '__main__':
-    m = Map(150, 150, 60, 60)
+    m = Map(75, 75, 60, 60)
 
     print("Let's get started...")
 
