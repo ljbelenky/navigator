@@ -47,7 +47,7 @@ class Edge:
 class Map:
     def __init__(self, rows, columns, percent_extant, percent_connected):
         '''Create a map with (rows*columns) nodes in which percent_extant 
-        of the nodes and ercent_connected of the edges exist.'''
+        of the nodes and percent_connected of the edges exist.'''
 
         self.rows = rows
         self.columns = columns
