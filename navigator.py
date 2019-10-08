@@ -31,7 +31,7 @@ class Edge:
 
     def __init__(self, Node1, Node2, length):
         '''Note: Edge is bi-directional. Node1 and Node2 are interchangeable'''
-        self.nodes = [Node1, Node2]
+        self.nodes = (Node1, Node2)
         self.length = length or np.random.random()*100
 
     def __repr__(self):
@@ -96,7 +96,7 @@ class Map:
                     break
         return self._finish
 
-    def plot(self, show=True):
+    def plot(self):
 
         for edge in self.edges:
             x = [edge.nodes[0].x, edge.nodes[1].x]
@@ -113,8 +113,6 @@ class Map:
                     s=400, marker='X', color='green')
         plt.scatter(self.finish.x, self.finish.y,
                     s=400, marker='X', color='red')
-        if show:
-            plt.show()
 
     def __repr__(self):
         return f'a Map with {len(self.nodes)} nodes and {len(self.edges)} edges'
@@ -159,14 +157,14 @@ class Car:
         x = [node.x for node in self.history.keys()]
         y = [node.y for node in self.history.keys()]
 
-        plt.plot(x, y, color=color, lw=5)
+        return plt.plot(x, y, color=color, lw=5)
 
     def __repr__(self):
         return f'A Car located at {self.current_position}'
 
 
 if __name__ == '__main__':
-    m = Map(75, 75, 60, 60)
+    m = Map(50, 50, 60, 60)
 
     print("Let's get started...")
 
@@ -193,6 +191,7 @@ if __name__ == '__main__':
         print(f'number of active cars: {len(active_cars)}')
 
     m.plot()
+    plt.show()
 
     if finished_cars == []:
         print('There is no path from start to finish')
