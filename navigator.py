@@ -32,7 +32,7 @@ class Edge:
     def __init__(self, Node1, Node2, length):
         '''Note: Edge is bi-directional. Node1 and Node2 are interchangeable'''
         self.nodes = (Node1, Node2)
-        self.length = length or np.random.random()*100
+        self.length = length
 
     def __repr__(self):
         return f'An edge of length {self.length} between {self.nodes}'
