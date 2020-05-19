@@ -164,7 +164,7 @@ class Car:
 
 
 if __name__ == '__main__':
-    m = Map(50, 50, 60, 60)
+    m = Map(50, 50, 70, 70)
 
     print("Let's get started...")
 
@@ -191,7 +191,7 @@ if __name__ == '__main__':
         print(f'number of active cars: {len(active_cars)}')
 
     m.plot()
-    plt.show()
+
 
     if finished_cars == []:
         print('There is no path from start to finish')
@@ -200,3 +200,5 @@ if __name__ == '__main__':
          m.finish.earliest_arrival]
         [car.plot('blue') for car in finished_cars if car.odometer ==
          m.finish.earliest_arrival]
+
+    plt.show()
