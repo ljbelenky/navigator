@@ -1,6 +1,6 @@
 # Navigator
 
-An excersize in problem solving using Object Oriented Principles
+An exersize in problem solving using Object Oriented Principles
 
 ![](./images/navigation_map.png)
 
